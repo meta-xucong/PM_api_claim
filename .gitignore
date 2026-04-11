@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+.pytest_cache/
+logs/
+
+.env
+config.yaml
+accounts_relayer_keys.json
+
+*.pyc
+*.pyo
+*.pyd
