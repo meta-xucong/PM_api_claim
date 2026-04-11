@@ -51,7 +51,14 @@ sudo PROJECT_DIR=/opt/PM_api_claim CONFIG_PATH=/opt/PM_api_claim/config.yaml ENV
 
 ## 部署后推荐流程
 
-1. 手动 dry-run 验证配置
+1. 填配置
+
+```bash
+nano /opt/PM_api_claim/.env
+nano /opt/PM_api_claim/config.yaml
+```
+
+2. 手动 dry-run 验证配置
 
 ```bash
 cd /opt/PM_api_claim
@@ -59,20 +66,20 @@ set -a; source .env; set +a
 .venv/bin/python main.py --config config.yaml --mode dry-run --log-level INFO
 ```
 
-2. 启动定时任务（每小时）
+3. 启动定时任务（每小时）
 
 ```bash
 sudo systemctl enable --now polymarket-claim.timer
 sudo systemctl status polymarket-claim.timer --no-pager
 ```
 
-3. 查看执行日志
+4. 查看执行日志
 
 ```bash
 journalctl -u polymarket-claim.service -n 200 --no-pager
 ```
 
-4. 立刻执行一次（不等整点）
+5. 立刻执行一次（不等整点）
 
 ```bash
 sudo systemctl start polymarket-claim.service
@@ -80,4 +87,3 @@ journalctl -u polymarket-claim.service -n 200 --no-pager
 ```
 
 提示：`enable --now polymarket-claim.timer` 会立刻启动 timer 本身，但不会立即跑 service；默认会在下一整点触发。
-
