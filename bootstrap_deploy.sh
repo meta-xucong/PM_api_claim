@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TARGET_DIR="${TARGET_DIR:-/home/trader/polymarket_api}"
+TARGET_DIR="${TARGET_DIR:-/home/trader/polymarket_api/PM_api_claim}"
 REPO_URL="${REPO_URL:-https://github.com/meta-xucong/PM_api_claim.git}"
 BRANCH="${BRANCH:-main}"
 
