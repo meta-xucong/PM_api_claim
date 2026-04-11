@@ -32,6 +32,28 @@ install_debian_deps_if_needed() {
   DEBIAN_FRONTEND=noninteractive apt-get install -y "${missing[@]}"
 }
 
+ensure_venv_ready() {
+  if "$PYTHON_BIN" -m venv "$PROJECT_DIR/.venv" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if ! command -v apt-get >/dev/null 2>&1; then
+    echo "Failed to create virtualenv and apt-get is unavailable."
+    exit 1
+  fi
+
+  local py_mm
+  py_mm="$("$PYTHON_BIN" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
+  local version_pkg="python${py_mm}-venv"
+
+  echo "venv creation failed, trying to install $version_pkg ..."
+  apt-get update
+  DEBIAN_FRONTEND=noninteractive apt-get install -y "$version_pkg" || \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y python3-venv
+
+  "$PYTHON_BIN" -m venv "$PROJECT_DIR/.venv"
+}
+
 if [[ ! -f "$CONFIG_PATH" ]]; then
   echo "Config file not found: $CONFIG_PATH"
   echo "Create it first (you can copy config.example.yaml)."
@@ -51,7 +73,7 @@ echo "ENV_FILE_PATH=$ENV_FILE_PATH"
 echo "RUN_USER=$RUN_USER"
 
 if [[ ! -d "$PROJECT_DIR/.venv" ]]; then
-  "$PYTHON_BIN" -m venv "$PROJECT_DIR/.venv"
+  ensure_venv_ready
 fi
 
 "$PROJECT_DIR/.venv/bin/python" -m ensurepip --upgrade || true
