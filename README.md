@@ -32,24 +32,37 @@ python main.py --config config.yaml --mode build-only
 python main.py --config config.yaml --mode live
 ```
 
-## Debian VPS 一键部署（默认只安装，不自动启动）
+## Debian VPS 一键部署（支持目录已存在）
 
-默认部署路径：`/home/trader/polymarket_api`
+默认路径：`/home/trader/polymarket_api`
+
+说明：下面命令可重复执行。目录不存在时自动 clone，目录已存在且是 git 仓库时自动 pull 更新并继续部署。
 
 ```bash
-sudo apt update && sudo apt install -y git && \
-sudo git clone https://github.com/meta-xucong/PM_api_claim.git /home/trader/polymarket_api && \
-cd /home/trader/polymarket_api && \
-cp .env.example .env && cp config.example.yaml config.yaml && \
-chmod +x deploy_systemd_hourly.sh && \
-sudo PROJECT_DIR=/home/trader/polymarket_api CONFIG_PATH=/home/trader/polymarket_api/config.yaml ENV_FILE_PATH=/home/trader/polymarket_api/.env bash /home/trader/polymarket_api/deploy_systemd_hourly.sh
+sudo TARGET_DIR=/home/trader/polymarket_api \
+REPO_URL=https://github.com/meta-xucong/PM_api_claim.git \
+BRANCH=main \
+bash -c '
+set -e
+if [ -d "$TARGET_DIR/.git" ]; then
+  git -C "$TARGET_DIR" fetch origin "$BRANCH"
+  git -C "$TARGET_DIR" checkout "$BRANCH"
+  git -C "$TARGET_DIR" pull --ff-only origin "$BRANCH"
+else
+  mkdir -p "$(dirname "$TARGET_DIR")"
+  git clone --branch "$BRANCH" "$REPO_URL" "$TARGET_DIR"
+fi
+chmod +x "$TARGET_DIR/bootstrap_deploy.sh"
+TARGET_DIR="$TARGET_DIR" REPO_URL="$REPO_URL" BRANCH="$BRANCH" bash "$TARGET_DIR/bootstrap_deploy.sh"
+'
 ```
 
-说明：
+`bootstrap_deploy.sh` 会自动：
 
-- 部署脚本会自动补齐 Debian 依赖（包括 `python3.x-venv`，例如 `python3.12-venv`）。
-- 如果目录已存在，改用更新流程：`cd /home/trader/polymarket_api && sudo git pull`
-- 如果你是 fork 仓库，请把 clone URL 换成你自己的，不要使用 `<...>` 占位符。
+- 安装/补齐依赖（包含 Debian 上 `python3.x-venv` 场景）
+- 创建虚拟环境并安装 Python 包
+- 写入 systemd service/timer 文件（默认不自动启动）
+- 自动生成 `.env` / `config.yaml`（若不存在）
 
 ## 部署后推荐流程
 
@@ -88,5 +101,5 @@ sudo systemctl start polymarket-claim.service
 journalctl -u polymarket-claim.service -n 200 --no-pager
 ```
 
-提示：`enable --now polymarket-claim.timer` 会立刻启动 timer 本身，但不会立即跑 service；默认会在下一整点触发。
+提示：`enable --now polymarket-claim.timer` 会立刻启动 timer，但不会立即执行 service；默认在下一整点触发。
 
