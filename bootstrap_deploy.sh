@@ -21,7 +21,24 @@ ensure_git() {
   DEBIAN_FRONTEND=noninteractive apt-get install -y git
 }
 
+ensure_git_safe_directory() {
+  if [[ ! -d "$TARGET_DIR" ]]; then
+    return 0
+  fi
+
+  local abs_target
+  if abs_target="$(realpath "$TARGET_DIR" 2>/dev/null)"; then
+    :
+  else
+    abs_target="$TARGET_DIR"
+  fi
+
+  git config --global --add safe.directory "$abs_target" || true
+}
+
 sync_repo() {
+  ensure_git_safe_directory
+
   if [[ -d "$TARGET_DIR/.git" ]]; then
     git -C "$TARGET_DIR" fetch origin "$BRANCH"
     git -C "$TARGET_DIR" checkout "$BRANCH"
