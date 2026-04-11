@@ -34,19 +34,21 @@ python main.py --config config.yaml --mode live
 
 ## Debian VPS 一键部署（默认只安装，不自动启动）
 
+默认部署路径：`/home/trader/polymarket_api`
+
 ```bash
 sudo apt update && sudo apt install -y git && \
-sudo git clone https://github.com/meta-xucong/PM_api_claim.git /opt/PM_api_claim && \
-cd /opt/PM_api_claim && \
+sudo git clone https://github.com/meta-xucong/PM_api_claim.git /home/trader/polymarket_api && \
+cd /home/trader/polymarket_api && \
 cp .env.example .env && cp config.example.yaml config.yaml && \
 chmod +x deploy_systemd_hourly.sh && \
-sudo PROJECT_DIR=/opt/PM_api_claim CONFIG_PATH=/opt/PM_api_claim/config.yaml ENV_FILE_PATH=/opt/PM_api_claim/.env bash /opt/PM_api_claim/deploy_systemd_hourly.sh
+sudo PROJECT_DIR=/home/trader/polymarket_api CONFIG_PATH=/home/trader/polymarket_api/config.yaml ENV_FILE_PATH=/home/trader/polymarket_api/.env bash /home/trader/polymarket_api/deploy_systemd_hourly.sh
 ```
 
 说明：
 
 - 部署脚本会自动补齐 Debian 依赖（包括 `python3.x-venv`，例如 `python3.12-venv`）。
-- 如果目录已存在，改用更新流程：`cd /opt/PM_api_claim && sudo git pull`
+- 如果目录已存在，改用更新流程：`cd /home/trader/polymarket_api && sudo git pull`
 - 如果你是 fork 仓库，请把 clone URL 换成你自己的，不要使用 `<...>` 占位符。
 
 ## 部署后推荐流程
@@ -54,14 +56,14 @@ sudo PROJECT_DIR=/opt/PM_api_claim CONFIG_PATH=/opt/PM_api_claim/config.yaml ENV
 1. 填配置
 
 ```bash
-nano /opt/PM_api_claim/.env
-nano /opt/PM_api_claim/config.yaml
+nano /home/trader/polymarket_api/.env
+nano /home/trader/polymarket_api/config.yaml
 ```
 
 2. 手动 dry-run 验证配置
 
 ```bash
-cd /opt/PM_api_claim
+cd /home/trader/polymarket_api
 set -a; source .env; set +a
 .venv/bin/python main.py --config config.yaml --mode dry-run --log-level INFO
 ```
@@ -87,3 +89,4 @@ journalctl -u polymarket-claim.service -n 200 --no-pager
 ```
 
 提示：`enable --now polymarket-claim.timer` 会立刻启动 timer 本身，但不会立即跑 service；默认会在下一整点触发。
+
