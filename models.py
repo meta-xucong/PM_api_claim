@@ -9,6 +9,22 @@ from eth_utils import is_address, to_checksum_address
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
+def _normalize_hex_input(value: Any, byte_len: int, field_name: str) -> str:
+    if isinstance(value, int):
+        if value < 0:
+            raise ValueError(f"{field_name} cannot be negative")
+        hex_body = format(value, "x")
+        if len(hex_body) > byte_len * 2:
+            raise ValueError(f"{field_name} is too large")
+        hex_body = hex_body.zfill(byte_len * 2)
+        return f"0x{hex_body}"
+
+    if isinstance(value, str):
+        return value.strip()
+
+    raise ValueError(f"{field_name} must be string or int")
+
+
 class RunMode(StrEnum):
     DRY_RUN = "dry-run"
     BUILD_ONLY = "build-only"
@@ -33,10 +49,10 @@ class AccountConfig(BaseModel):
     relayer_api_key: str
     relayer_api_key_address: str
 
-    @field_validator("signer_private_key")
+    @field_validator("signer_private_key", mode="before")
     @classmethod
-    def validate_private_key(cls, value: str) -> str:
-        key = value.strip()
+    def validate_private_key(cls, value: Any) -> str:
+        key = _normalize_hex_input(value, 32, "signer_private_key")
         if not key:
             raise ValueError("signer_private_key cannot be empty")
         normalized = key if key.startswith("0x") else f"0x{key}"
@@ -44,9 +60,10 @@ class AccountConfig(BaseModel):
             raise ValueError("signer_private_key must be 32 bytes hex")
         return normalized
 
-    @field_validator("signer_address", "proxy_wallet", "relayer_api_key_address")
+    @field_validator("signer_address", "proxy_wallet", "relayer_api_key_address", mode="before")
     @classmethod
-    def validate_address(cls, value: str) -> str:
+    def validate_address(cls, value: Any) -> str:
+        value = _normalize_hex_input(value, 20, "address")
         if not is_address(value):
             raise ValueError(f"invalid address: {value}")
         return to_checksum_address(value)
@@ -70,9 +87,10 @@ class ChainContracts(BaseModel):
     ctf_contract: str = Field(default="0x4D97DCd97eC945f40cF65F87097ACe5EA0476045")
     collateral_token: str = Field(default="0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174")
 
-    @field_validator("*")
+    @field_validator("*", mode="before")
     @classmethod
-    def validate_address(cls, value: str) -> str:
+    def validate_address(cls, value: Any) -> str:
+        value = _normalize_hex_input(value, 20, "address")
         if not is_address(value):
             raise ValueError(f"invalid address: {value}")
         return to_checksum_address(value)
@@ -133,9 +151,10 @@ class RelayPayload(BaseModel):
     address: str
     nonce: str
 
-    @field_validator("address")
+    @field_validator("address", mode="before")
     @classmethod
-    def validate_address(cls, value: str) -> str:
+    def validate_address(cls, value: Any) -> str:
+        value = _normalize_hex_input(value, 20, "relay address")
         if not is_address(value):
             raise ValueError(f"invalid relay address: {value}")
         return to_checksum_address(value)
