@@ -7,6 +7,7 @@ CONFIG_PATH="${CONFIG_PATH:-$PROJECT_DIR/config.yaml}"
 ENV_FILE_PATH="${ENV_FILE_PATH:-$PROJECT_DIR/.env}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 RUN_USER="${RUN_USER:-${SUDO_USER:-$(id -un)}}"
+AUTO_START="${AUTO_START:-0}"
 
 install_debian_deps_if_needed() {
   local missing=()
@@ -92,10 +93,16 @@ WantedBy=timers.target
 EOF
 
 systemctl daemon-reload
-systemctl enable --now "${SERVICE_NAME}.timer"
 
-echo "Deployment finished."
+echo "Deployment finished (install/setup only). Timer is NOT started by default."
+echo "When you finish editing .env/config.yaml, start with:"
+echo "  systemctl enable --now ${SERVICE_NAME}.timer"
 echo "Check timer status with:"
 echo "  systemctl status ${SERVICE_NAME}.timer --no-pager"
 echo "Check latest logs with:"
 echo "  journalctl -u ${SERVICE_NAME}.service -n 200 --no-pager"
+
+if [[ "$AUTO_START" == "1" ]]; then
+  systemctl enable --now "${SERVICE_NAME}.timer"
+  echo "AUTO_START=1 detected. Timer started."
+fi

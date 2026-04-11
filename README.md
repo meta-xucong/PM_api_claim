@@ -39,6 +39,7 @@ python main.py --config config.yaml --mode live
 
 > 先把下面命令里的 `<GITHUB_USER>` 改成你的 GitHub 用户名。
 > `deploy_systemd_hourly.sh` 会自动检查并安装缺失依赖（`python3` / `python3-venv` / `systemd`）。
+> 默认只部署，不会自动启动 timer。
 
 ```bash
 sudo apt update && sudo apt install -y git && \
@@ -47,6 +48,12 @@ cd /opt/PM_api_claim && \
 cp .env.example .env && cp config.example.yaml config.yaml && \
 chmod +x deploy_systemd_hourly.sh && \
 sudo PROJECT_DIR=/opt/PM_api_claim CONFIG_PATH=/opt/PM_api_claim/config.yaml ENV_FILE_PATH=/opt/PM_api_claim/.env bash /opt/PM_api_claim/deploy_systemd_hourly.sh
+```
+
+编辑好 `.env` 和 `config.yaml` 后，再手动启动：
+
+```bash
+sudo systemctl enable --now polymarket-claim.timer
 ```
 
 部署后查看：
