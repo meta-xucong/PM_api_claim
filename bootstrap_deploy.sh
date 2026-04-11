@@ -36,24 +36,28 @@ ensure_git_safe_directory() {
   git config --global --add safe.directory "$abs_target" || true
 }
 
+ensure_origin_remote() {
+  if git -C "$TARGET_DIR" remote get-url origin >/dev/null 2>&1; then
+    git -C "$TARGET_DIR" remote set-url origin "$REPO_URL"
+  else
+    git -C "$TARGET_DIR" remote add origin "$REPO_URL"
+  fi
+}
+
 sync_repo() {
   ensure_git_safe_directory
 
   if [[ -d "$TARGET_DIR/.git" ]]; then
+    ensure_origin_remote
     git -C "$TARGET_DIR" fetch origin "$BRANCH"
-    git -C "$TARGET_DIR" checkout "$BRANCH"
-    git -C "$TARGET_DIR" pull --ff-only origin "$BRANCH"
+    git -C "$TARGET_DIR" checkout -B "$BRANCH" "origin/$BRANCH" --force
     return 0
   fi
 
   if [[ -d "$TARGET_DIR" ]] && [[ -n "$(ls -A "$TARGET_DIR" 2>/dev/null)" ]]; then
     echo "Target path exists and is not a git repo, initializing in place: $TARGET_DIR"
     git -C "$TARGET_DIR" init
-    if git -C "$TARGET_DIR" remote get-url origin >/dev/null 2>&1; then
-      git -C "$TARGET_DIR" remote set-url origin "$REPO_URL"
-    else
-      git -C "$TARGET_DIR" remote add origin "$REPO_URL"
-    fi
+    ensure_origin_remote
     git -C "$TARGET_DIR" fetch origin "$BRANCH"
     git -C "$TARGET_DIR" checkout -B "$BRANCH" "origin/$BRANCH" --force
     return 0
