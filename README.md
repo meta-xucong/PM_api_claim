@@ -45,6 +45,11 @@ chmod +x deploy_systemd_hourly.sh && \
 sudo PROJECT_DIR=/opt/PM_api_claim CONFIG_PATH=/opt/PM_api_claim/config.yaml ENV_FILE_PATH=/opt/PM_api_claim/.env bash /opt/PM_api_claim/deploy_systemd_hourly.sh
 ```
 
+说明：
+
+- 部署脚本会自动补齐 Debian 依赖（包括 `python3.x-venv`，例如 `python3.12-venv`）。
+- 如果你已经 clone 过仓库，先执行：`cd /opt/PM_api_claim && sudo git pull`
+
 如果你是 fork 仓库，请把 URL 改成你自己的，但不要写 `<...>` 这种占位符格式。
 
 ## 填完配置后手动启动
