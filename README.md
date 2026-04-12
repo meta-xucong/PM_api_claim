@@ -78,3 +78,11 @@ sudo systemctl status polymarket-claim.timer --no-pager
 journalctl -u polymarket-claim.service -n 200 --no-pager
 ```
 
+
+## Stop systemd auto-run
+
+```bash
+sudo systemctl disable --now polymarket-claim.timer
+sudo systemctl stop polymarket-claim.service
+sudo systemctl status polymarket-claim.timer --no-pager
+```
