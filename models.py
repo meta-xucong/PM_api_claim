@@ -85,6 +85,7 @@ class ChainContracts(BaseModel):
     safe_factory: str = Field(default="0xaacFeEa03eb1561C4e67d661e40682Bd20E3541b")
     safe_multisend: str = Field(default="0xA238CBeb142c10Ef7Ad8442C6D1f9E89e07e7761")
     ctf_contract: str = Field(default="0x4D97DCd97eC945f40cF65F87097ACe5EA0476045")
+    negative_risk_adapter: str = Field(default="0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296")
     collateral_token: str = Field(default="0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174")
 
     @field_validator("*", mode="before")
@@ -98,8 +99,10 @@ class ChainContracts(BaseModel):
 
 class AppConfig(BaseModel):
     chain_id: int = 137
+    rpc_url: str = "https://polygon-bor-rpc.publicnode.com"
     relayer_url: str = "https://relayer-v2.polymarket.com"
     data_api_url: str = "https://data-api.polymarket.com"
+    enable_negative_risk_claim: bool = True
     request_timeout_seconds: float = 15.0
     request_retry_total: int = 4
     request_retry_backoff_seconds: float = 0.6
@@ -127,6 +130,9 @@ class AppConfig(BaseModel):
 class Position(BaseModel):
     proxyWallet: str | None = None
     conditionId: str
+    asset: str | int | None = None
+    outcome: str | None = None
+    outcomeIndex: int | None = None
     size: Decimal | float | int
     redeemable: bool
     negativeRisk: bool | None = None
@@ -145,6 +151,20 @@ class Position(BaseModel):
     @property
     def numeric_size(self) -> Decimal:
         return Decimal(str(self.size))
+
+    @property
+    def asset_token_id(self) -> int | None:
+        if self.asset is None:
+            return None
+        if isinstance(self.asset, int):
+            return self.asset
+        text = str(self.asset).strip()
+        if not text:
+            return None
+        try:
+            return int(text)
+        except ValueError:
+            return None
 
 
 class RelayPayload(BaseModel):

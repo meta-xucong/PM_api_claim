@@ -4,6 +4,7 @@ from eth_abi import encode
 from eth_utils import keccak, to_bytes, to_checksum_address
 
 CTF_REDEEM_SIGNATURE = "redeemPositions(address,bytes32,bytes32,uint256[])"
+NEGATIVE_RISK_REDEEM_SIGNATURE = "redeemPositions(bytes32,uint256[])"
 PARENT_COLLECTION_ID_ZERO = b"\x00" * 32
 DEFAULT_INDEX_SETS = [1, 2]
 
@@ -38,3 +39,17 @@ def build_ctf_redeem_calldata(
     )
     return f"0x{(_selector(CTF_REDEEM_SIGNATURE) + encoded_args).hex()}"
 
+
+def build_negative_risk_redeem_calldata(
+    condition_id: str, amounts: list[int]
+) -> str:
+    if len(amounts) != 2:
+        raise ValueError("negative risk redeem expects exactly 2 amounts [yes, no]")
+    encoded_args = encode(
+        ["bytes32", "uint256[]"],
+        [
+            _as_bytes32_hex(condition_id),
+            [int(amounts[0]), int(amounts[1])],
+        ],
+    )
+    return f"0x{(_selector(NEGATIVE_RISK_REDEEM_SIGNATURE) + encoded_args).hex()}"
