@@ -108,20 +108,15 @@ sudo systemctl status polymarket-claim.timer --no-pager
 
 ## Run once now (verify immediately)
 
-Run one production-style execution immediately via systemd service:
+Use this single method to run immediately without waiting for jitter:
 
 ```bash
-sudo systemctl start polymarket-claim.service
-sudo journalctl -u polymarket-claim.service -n 200 --no-pager
-```
-
-If you want an immediate check without waiting for live jitter delay, temporarily disable jitter for one run:
-
-```bash
+sudo systemctl stop polymarket-claim.service
 cd /home/trader/polymarket_api/PM_api_claim
 cp config.yaml config.yaml.bak
 sed -i 's/^enable_live_hourly_jitter:.*/enable_live_hourly_jitter: false/' config.yaml
-set -a; source .env; set +a
-.venv/bin/python main.py --config config.yaml --mode live --log-level INFO
+sudo systemctl start --no-block polymarket-claim.service
+sudo journalctl -u polymarket-claim.service -f --no-pager
+# restore after this run finishes
 mv config.yaml.bak config.yaml
 ```
