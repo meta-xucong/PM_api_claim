@@ -112,7 +112,7 @@ class AppConfig(BaseModel):
     poll_max_attempts: int = 120
     positions_page_limit: int = 500
     enable_live_hourly_jitter: bool = True
-    live_hourly_jitter_seconds: int = 600
+    live_hourly_jitter_seconds: int = 1800
     rotation_state_path: str = "logs/claim_strategy_state.json"
     contracts: ChainContracts = Field(default_factory=ChainContracts)
     accounts: list[AccountConfig]

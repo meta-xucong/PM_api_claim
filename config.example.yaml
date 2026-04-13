@@ -12,7 +12,7 @@ poll_interval_seconds: 3
 poll_max_attempts: 120
 positions_page_limit: 500
 enable_live_hourly_jitter: true
-live_hourly_jitter_seconds: 600
+live_hourly_jitter_seconds: 1800
 rotation_state_path: "logs/claim_strategy_state.json"
 
 contracts:
