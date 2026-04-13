@@ -105,3 +105,23 @@ If timer is not running, start it again:
 sudo systemctl enable --now polymarket-claim.timer
 sudo systemctl status polymarket-claim.timer --no-pager
 ```
+
+## Run once now (verify immediately)
+
+Run one production-style execution immediately via systemd service:
+
+```bash
+sudo systemctl start polymarket-claim.service
+sudo journalctl -u polymarket-claim.service -n 200 --no-pager
+```
+
+If you want an immediate check without waiting for live jitter delay, temporarily disable jitter for one run:
+
+```bash
+cd /home/trader/polymarket_api/PM_api_claim
+cp config.yaml config.yaml.bak
+sed -i 's/^enable_live_hourly_jitter:.*/enable_live_hourly_jitter: false/' config.yaml
+set -a; source .env; set +a
+.venv/bin/python main.py --config config.yaml --mode live --log-level INFO
+mv config.yaml.bak config.yaml
+```

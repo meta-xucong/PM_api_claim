@@ -5,7 +5,7 @@ import random
 from pathlib import Path
 
 import claim_runner as claim_runner_module
-from claim_runner import ClaimRunner
+from claim_runner import ClaimRunner, GracefulStopRequested
 from models import AppConfig, RunMode
 
 
@@ -108,3 +108,21 @@ def test_live_hourly_jitter_negative_runs_before_next_top(monkeypatch) -> None: 
     assert jitter == -120
     assert delay == 3480
     assert sleeps == [3480]
+
+
+def test_live_interrupted_run_releases_lock_and_does_not_advance_rotation(tmp_path: Path) -> None:
+    state_path = tmp_path / "strategy_state.json"
+    lock_path = Path(str(state_path) + ".lock")
+    config = _build_live_config(state_path)
+    runner = ClaimRunner(config=config, mode=RunMode.LIVE)
+    runner._rng = random.Random(1)
+
+    def interrupted_run_account(_account, _summary):  # type: ignore[no-untyped-def]
+        raise GracefulStopRequested("received SIGTERM")
+
+    runner._run_account = interrupted_run_account  # type: ignore[method-assign]
+    summary = runner.run()
+
+    assert summary.processed_accounts == 1
+    assert not lock_path.exists()
+    assert not state_path.exists()

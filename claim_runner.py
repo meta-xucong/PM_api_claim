@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import random
+import signal
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -61,6 +62,10 @@ class RotationPick:
     remaining_before: list[str]
 
 
+class GracefulStopRequested(Exception):
+    pass
+
+
 def _structured_log(event: str, **fields: Any) -> None:
     payload = {"event": event, **fields}
     logger.info(json.dumps(payload, ensure_ascii=True))
@@ -88,6 +93,8 @@ class ClaimRunner:
         self._balance_cache: dict[tuple[str, int], int] = {}
         self._rng: random.Random = random.SystemRandom()
         self._live_lock_path: Path | None = None
+        self._signal_handlers_installed: bool = False
+        self._previous_signal_handlers: dict[int, Any] = {}
 
     def run(self) -> RunSummary:
         enabled_accounts = self.config.enabled_accounts()
@@ -115,13 +122,17 @@ class ClaimRunner:
                     jitter_seconds=jitter_seconds,
                     delay_seconds=delay_seconds,
                 )
-                try:
-                    self._run_account(account, summary)
-                finally:
-                    self._mark_account_processed(
-                        enabled_accounts=enabled_accounts,
-                        pick=pick,
-                    )
+                self._run_account(account, summary)
+                self._mark_account_processed(
+                    enabled_accounts=enabled_accounts,
+                    pick=pick,
+                )
+            except GracefulStopRequested as exc:
+                _structured_log(
+                    "live_run_interrupted",
+                    reason=str(exc),
+                )
+                return summary
             finally:
                 self._release_live_lock()
             return summary
@@ -160,6 +171,7 @@ class ClaimRunner:
                 with os.fdopen(fd, "w", encoding="utf-8") as f:
                     f.write(payload)
                 self._live_lock_path = lock_path
+                self._install_signal_handlers()
                 return True
             except FileExistsError:
                 try:
@@ -179,6 +191,7 @@ class ClaimRunner:
         return False
 
     def _release_live_lock(self) -> None:
+        self._restore_signal_handlers()
         if self._live_lock_path is None:
             return
         try:
@@ -187,6 +200,27 @@ class ClaimRunner:
             pass
         finally:
             self._live_lock_path = None
+
+    def _install_signal_handlers(self) -> None:
+        if self._signal_handlers_installed:
+            return
+
+        def _handler(signum: int, _frame: Any) -> None:
+            signal_name = signal.Signals(signum).name
+            raise GracefulStopRequested(f"received {signal_name}")
+
+        for sig in (signal.SIGTERM, signal.SIGINT):
+            self._previous_signal_handlers[sig] = signal.getsignal(sig)
+            signal.signal(sig, _handler)
+        self._signal_handlers_installed = True
+
+    def _restore_signal_handlers(self) -> None:
+        if not self._signal_handlers_installed:
+            return
+        for sig, handler in self._previous_signal_handlers.items():
+            signal.signal(sig, handler)
+        self._previous_signal_handlers.clear()
+        self._signal_handlers_installed = False
 
     @staticmethod
     def _dedupe_keep_order(items: list[str]) -> list[str]:
