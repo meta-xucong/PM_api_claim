@@ -86,3 +86,22 @@ sudo systemctl disable --now polymarket-claim.timer
 sudo systemctl stop polymarket-claim.service
 sudo systemctl status polymarket-claim.timer --no-pager
 ```
+
+## One-click update (existing deployment)
+
+Run this on the server to pull the latest `main` and re-apply deploy setup:
+
+```bash
+cd /home/trader/polymarket_api/PM_api_claim && \
+sudo TARGET_DIR=/home/trader/polymarket_api/PM_api_claim \
+REPO_URL=https://github.com/meta-xucong/PM_api_claim.git \
+BRANCH=main \
+bash ./bootstrap_deploy.sh
+```
+
+If timer is not running, start it again:
+
+```bash
+sudo systemctl enable --now polymarket-claim.timer
+sudo systemctl status polymarket-claim.timer --no-pager
+```

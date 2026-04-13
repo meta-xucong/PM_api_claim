@@ -102,6 +102,7 @@ class AppConfig(BaseModel):
     rpc_url: str = "https://polygon-bor-rpc.publicnode.com"
     relayer_url: str = "https://relayer-v2.polymarket.com"
     data_api_url: str = "https://data-api.polymarket.com"
+    gamma_api_url: str = "https://gamma-api.polymarket.com"
     enable_negative_risk_claim: bool = True
     request_timeout_seconds: float = 15.0
     request_retry_total: int = 4
@@ -110,6 +111,9 @@ class AppConfig(BaseModel):
     poll_interval_seconds: float = 3.0
     poll_max_attempts: int = 120
     positions_page_limit: int = 500
+    enable_live_hourly_jitter: bool = True
+    live_hourly_jitter_seconds: int = 600
+    rotation_state_path: str = "logs/claim_strategy_state.json"
     contracts: ChainContracts = Field(default_factory=ChainContracts)
     accounts: list[AccountConfig]
 
@@ -117,6 +121,8 @@ class AppConfig(BaseModel):
     def validate_chain_and_accounts(self) -> "AppConfig":
         if self.chain_id != 137:
             raise ValueError("chain_id must be 137 (Polygon mainnet) for this app")
+        if self.live_hourly_jitter_seconds < 0:
+            raise ValueError("live_hourly_jitter_seconds must be >= 0")
 
         account_names = [a.account_name for a in self.accounts]
         if len(account_names) != len(set(account_names)):
@@ -130,6 +136,8 @@ class AppConfig(BaseModel):
 class Position(BaseModel):
     proxyWallet: str | None = None
     conditionId: str
+    slug: str | None = None
+    eventSlug: str | None = None
     asset: str | int | None = None
     outcome: str | None = None
     outcomeIndex: int | None = None

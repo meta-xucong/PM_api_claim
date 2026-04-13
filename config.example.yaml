@@ -2,6 +2,7 @@ chain_id: 137
 rpc_url: "https://polygon-bor-rpc.publicnode.com"
 relayer_url: "https://relayer-v2.polymarket.com"
 data_api_url: "https://data-api.polymarket.com"
+gamma_api_url: "https://gamma-api.polymarket.com"
 enable_negative_risk_claim: true
 request_timeout_seconds: 15
 request_retry_total: 4
@@ -10,6 +11,9 @@ gas_price: "0"
 poll_interval_seconds: 3
 poll_max_attempts: 120
 positions_page_limit: 500
+enable_live_hourly_jitter: true
+live_hourly_jitter_seconds: 600
+rotation_state_path: "logs/claim_strategy_state.json"
 
 contracts:
   proxy_factory: "0xaB45c5A4B0c941a2F231C04C3f49182e1A254052"
